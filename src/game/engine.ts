@@ -181,7 +181,7 @@ export function enemyTurn(state: NightState, rng: Rng): NightReport {
     gradeNote = 'Шеф просит объяснительную. Письменно. К полудню.';
   } else {
     grade = 'F';
-    gradeNote = 'Утренняя планёрка пройдёт без вас: вас ждёт Арбитраж.';
+    gradeNote = 'Утренняя планёрка пройдёт без вас: вас ждут Арбитры.';
   }
 
   return {
