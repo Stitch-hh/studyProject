@@ -8,6 +8,14 @@ import type {
   NightState,
 } from './types';
 
+/**
+ * Уровни канонические: 7-й — слабейший, 1-й — сильнейший (дальше вне категорий).
+ * Для арифметики (баланс, счёт) используется весомость = 8 − уровень.
+ */
+export function licenseWeight(level: number): number {
+  return Math.max(1, Math.round((8 - level) / 2));
+}
+
 export const SHIFT_MINUTES = 480;
 export const START_POWER = 100;
 export const TRAVEL_MINUTES = 20;
@@ -87,7 +95,7 @@ export function resolveWitness(state: NightState, choice: WitnessChoice): Effect
     choice === 'erase'
       ? {
           text: 'Свидетелю мягко стёрта память о последнем часе. Минимальное вмешательство — но запись в Реестре появилась.',
-          license: 1,
+          license: 6,
           balance: 0,
         }
       : {
@@ -132,10 +140,11 @@ export function autoResolveRest(state: NightState): string[] {
 export function enemyTurn(state: NightState, rng: Rng): NightReport {
   const responses: NightReport['responses'] = [];
   for (const level of state.licenses) {
-    const pool = ENEMY_RESPONSES.filter((r) => r.level === Math.min(level, 3));
+    const tier = level >= 5 ? 6 : level >= 3 ? 4 : 2;
+    const pool = ENEMY_RESPONSES.filter((r) => r.level === tier);
     const resp = pool.length > 0 ? rng.pick(pool) : null;
     if (!resp) continue;
-    state.balance -= resp.level;
+    state.balance -= licenseWeight(resp.level);
     state.victims += resp.victims ?? 0;
     state.exposure += resp.exposure ?? 0;
     responses.push({ text: resp.text, level: resp.level });
@@ -144,7 +153,7 @@ export function enemyTurn(state: NightState, rng: Rng): NightReport {
   const resolved = state.incidents.length;
   const arbitration = Math.abs(state.balance) >= 6;
 
-  const licenseDebt = state.licenses.reduce((a, b) => a + b, 0);
+  const licenseDebt = state.licenses.reduce((a, b) => a + licenseWeight(b), 0);
   const score =
     state.saved * 12 -
     state.victims * 18 -

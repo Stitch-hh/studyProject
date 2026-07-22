@@ -95,7 +95,7 @@ function statsBar(): HTMLElement {
       'stat',
       `<span class="stat-label">Реестр</span>${
         state.licenses.length > 0
-          ? state.licenses.map((l) => `<span class="lic">L${l}</span>`).join('')
+          ? state.licenses.map((l) => `<span class="lic">${l}-й ур.</span>`).join('')
           : '<span class="dim">пусто</span>'
       }`,
     ),
@@ -116,7 +116,7 @@ function optionCosts(opt: DecisionOption): string {
   const parts: string[] = [`${opt.time} мин`];
   if (opt.power > 0) parts.push(`${opt.power} Силы`);
   const lvl = opt.success.license ?? 0;
-  if (lvl > 0) parts.push(`лицензия L${lvl} Тьме`);
+  if (lvl > 0) parts.push(`лицензия ${lvl}-го ур. Тьме`);
   if (opt.risk) parts.push(`риск ${Math.round(opt.risk * 100)}%`);
   return parts.join(' · ');
 }
@@ -207,7 +207,7 @@ function renderWitnessPrompt(failed: boolean): void {
     'option kind-force',
     `<span class="option-kind">СИЛА</span>` +
       `<span class="option-label">Стереть память о часе</span>` +
-      `<span class="option-costs">15 мин · лицензия L1 Тьме</span>`,
+      `<span class="option-costs">15 мин · лицензия 6-го ур. Тьме</span>`,
   );
   erase.addEventListener('click', () => {
     resolveWitness(state, 'erase');
@@ -285,7 +285,7 @@ function finishNight(ranOut: boolean): void {
     );
   } else {
     for (const r of report.responses) {
-      resp.append(el('p', `card-text resp-l${r.level}`, `[L${r.level}] ${r.text}`));
+      resp.append(el('p', `card-text resp-l${r.level}`, `[${r.level}-й ур.] ${r.text}`));
     }
   }
   scr.append(resp);

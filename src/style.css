@@ -269,9 +269,9 @@ body {
 
 .report { gap: 14px; }
 
-.resp-l1 { color: var(--text); }
-.resp-l2 { color: #cfa8a0; }
-.resp-l3 { color: #d98a7a; }
+.resp-l6 { color: var(--text); }
+.resp-l4 { color: #cfa8a0; }
+.resp-l2 { color: #d98a7a; }
 
 .warn {
   color: var(--warn);
