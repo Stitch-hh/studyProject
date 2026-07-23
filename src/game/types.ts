@@ -1,4 +1,4 @@
-export type OptionKind = 'force' | 'talk' | 'paper' | 'ignore';
+export type OptionKind = 'force' | 'talk' | 'paper' | 'ignore' | 'personal';
 
 /** Эффекты применения решения (или его провала). */
 export interface Effects {
@@ -11,6 +11,12 @@ export interface Effects {
   license?: number;
   /** Публичность: люди что-то заметили. Портит итоговую оценку. */
   exposure?: number;
+  /** Лицензия-компенсация Свету за доказанное нарушение Тьмы (канонический уровень). */
+  reward?: number;
+  /** Деньги: минус — трата, плюс — редко. */
+  money?: number;
+  /** Репутация в общине Иных. */
+  reputation?: number;
 }
 
 export interface DecisionOption {
@@ -57,6 +63,10 @@ export interface NightState {
   saved: number;
   victims: number;
   exposure: number;
+  /** Уровни лицензий-компенсаций, заработанных Светом за ночь. */
+  rewards: number[];
+  money: number;
+  reputation: number;
   incidents: IncidentInstance[];
   idx: number;
   log: string[];

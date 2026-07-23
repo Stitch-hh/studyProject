@@ -20,6 +20,7 @@ const KIND_LABEL: Record<DecisionOption['kind'], string> = {
   talk: 'СЛОВО',
   paper: 'БУМАГА',
   ignore: 'МИМО',
+  personal: 'ЛИЧНО',
 };
 
 let root: HTMLElement;
@@ -119,8 +120,12 @@ function statsBar(): HTMLElement {
 function optionCosts(opt: DecisionOption): string {
   const parts: string[] = [`${opt.time} мин`];
   if (opt.power > 0) parts.push(`${opt.power} Силы`);
+  const money = opt.success.money ?? 0;
+  if (money < 0) parts.push(`${-money} денег`);
   const lvl = opt.success.license ?? 0;
   if (lvl > 0) parts.push(`лицензия ${lvl}-го ур. Тьме`);
+  const rew = opt.success.reward ?? 0;
+  if (rew > 0) parts.push(`компенсация ${rew}-го ур. Свету`);
   if (opt.risk) parts.push(`риск ${Math.round(opt.risk * 100)}%`);
   return parts.join(' · ');
 }
@@ -303,6 +308,11 @@ function finishNight(ranOut: boolean): void {
       'card-text dim',
       `Спасено: ${report.saved} · Жертвы: ${report.victims} · Огласка: ${report.exposure} · ` +
         `Баланс: ${report.balance > 0 ? '+' : ''}${report.balance} · Остаток Силы: ${report.powerLeft}`,
+    ),
+    el(
+      'p',
+      'card-text dim',
+      `Компенсации Свету: ${state.rewards.length} · Репутация: ${state.reputation > 0 ? '+' : ''}${state.reputation} · Деньги: ${state.money}`,
     ),
   );
   if (report.arbitration) {

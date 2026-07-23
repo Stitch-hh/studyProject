@@ -18,6 +18,7 @@ export function licenseWeight(level: number): number {
 
 export const SHIFT_MINUTES = 720; // канон: смена 12 часов (20:00 → 08:00)
 export const START_POWER = 100;
+export const START_MONEY = 200;
 export const TRAVEL_MINUTES = 20;
 export const INCIDENTS_PER_NIGHT = 6;
 export const WITNESS_CHANCE = 0.35;
@@ -46,6 +47,9 @@ export function createNight(seed: number): { state: NightState; rng: Rng } {
     saved: 0,
     victims: 0,
     exposure: 0,
+    rewards: [],
+    money: START_MONEY,
+    reputation: 0,
     incidents,
     idx: 0,
     log: [],
@@ -66,7 +70,10 @@ function applyEffects(state: NightState, fx: Effects): void {
   state.victims += fx.victims ?? 0;
   state.balance += fx.balance ?? 0;
   state.exposure += fx.exposure ?? 0;
+  state.money += fx.money ?? 0;
+  state.reputation += fx.reputation ?? 0;
   if (fx.license && fx.license > 0) state.licenses.push(fx.license);
+  if (fx.reward && fx.reward > 0) state.rewards.push(fx.reward);
 }
 
 export function applyDecision(
@@ -154,11 +161,14 @@ export function enemyTurn(state: NightState, rng: Rng): NightReport {
   const arbitration = Math.abs(state.balance) >= 6;
 
   const licenseDebt = state.licenses.reduce((a, b) => a + licenseWeight(b), 0);
+  const rewardCredit = state.rewards.reduce((a, b) => a + licenseWeight(b), 0);
   const score =
     state.saved * 12 -
     state.victims * 18 -
     state.exposure * 8 -
-    licenseDebt * 6 -
+    licenseDebt * 6 +
+    rewardCredit * 5 +
+    state.reputation * 3 -
     Math.abs(state.balance) * 4 +
     Math.round(state.power / 10);
 
