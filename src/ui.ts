@@ -13,6 +13,7 @@ import {
 } from './game/engine';
 import { randomSeed, seedFromUrl, type Rng } from './game/rng';
 import type { DecisionOption, NightState } from './game/types';
+import { renderCombat } from './combatUi';
 
 const KIND_LABEL: Record<DecisionOption['kind'], string> = {
   force: 'СИЛА',
@@ -70,6 +71,9 @@ function renderIntro(): void {
     replayBtn.addEventListener('click', () => startNight(seed));
     scr.append(replayBtn);
   }
+  const combatBtn = el('button', 'btn', '⚔ Испытать бой (этап 0.5)');
+  combatBtn.addEventListener('click', () => renderCombat(root, renderIntro));
+  scr.append(combatBtn);
   root.append(scr);
 }
 
