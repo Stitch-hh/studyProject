@@ -231,7 +231,8 @@ function resolveSpell(s: CombatState, caster: Combatant, target: Combatant, spel
     log(s, `${caster.name}: ${spell.name} — ${target.name} застывает на ${ticks} т., подчиняясь приказу.`, 'effect');
   }
   if (spell.effect === 'heal') {
-    const amt = Math.round((spell.effectPower ?? 0) * Math.min(scale, 4));
+    // лечение оверчарджится наравне с уроном: влил больше Силы — восстановил больше
+    const amt = Math.round((spell.effectPower ?? 0) * scale);
     caster.hp = Math.min(caster.hpMax, caster.hp + amt);
     log(s, `${caster.name}: ${spell.name} — восстановлено ${amt} HP.`, 'heal');
   }
@@ -264,10 +265,12 @@ function resolveSpell(s: CombatState, caster: Combatant, target: Combatant, spel
       caster.hp = Math.min(caster.hpMax, caster.hp + healed);
       if (healed > 0) log(s, `${caster.name}: ${spell.name} возвращает ${healed} жизни.`, 'heal');
     }
+    // оверчардж виден на всём диапазоне, а не только на ×20-крите
+    const mult = scale >= 1.5 ? ` ×${scale >= 10 ? Math.round(scale) : scale.toFixed(1)}` : '';
     if (crit) {
-      log(s, `⚡ ОВЕРДРАЙВ! ${caster.name}: ${spell.name} на ${real} урона!`, 'overdrive');
+      log(s, `⚡ ОВЕРДРАЙВ${mult}! ${caster.name}: ${spell.name} — ${real} урона!`, 'overdrive');
     } else {
-      log(s, `${caster.name}: ${spell.name} — ${real} урона.`, 'hit');
+      log(s, `${caster.name}: ${spell.name}${mult} — ${real} урона.`, 'hit');
     }
   }
 }
