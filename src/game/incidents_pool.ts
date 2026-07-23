@@ -99,7 +99,7 @@ export const INCIDENTS_POOL: IncidentTemplate[] = [
     options: [
       {
         kind: 'force', label: 'Исцелить самому этой ночью', time: 45, power: 40,
-        success: { text: 'Мальчик будет жить. Кто-то заплатит за это чудо, и вы не выберете кто. Баф «Своя в аналитике».', saved: 1, license: 2, balance: 1 },
+        success: { text: 'Мальчик будет жить. Кто-то заплатит за это чудо, и вы не выберете кто. Баф «Своя в аналитике».', saved: 1, license: 3, balance: 1 },
       },
       {
         kind: 'talk', label: 'Подтолкнуть вероятность', time: 25, power: 10, risk: 0.45,
@@ -157,7 +157,7 @@ export const INCIDENTS_POOL: IncidentTemplate[] = [
       },
       {
         kind: 'paper', label: 'Проверить обеих', time: 70, power: 0,
-        success: { text: 'У доносчицы свои закладки: двойные санкции, двойные компенсации, ниша чиста — ценой двух личных врагов второго уровня.', reward: 4, balance: 1 },
+        success: { text: 'У доносчицы свои закладки: двойные санкции, двойные компенсации, ниша чиста — ценой двух личных врагов второго уровня.', reward: 2, balance: 2 },
       },
       {
         kind: 'ignore', label: 'Анонимкам не отвечаем', time: 5, power: 0,
@@ -589,7 +589,7 @@ export const INCIDENTS_POOL: IncidentTemplate[] = [
     ],
   },
 
-  // составной: свёрнут к основному решению
+  // редкий подысход (перевёртыш) свёрнут в текст успеха СЛОВО
   {
     id: 'wolf-cub',
     title: 'Волчонок',
@@ -710,12 +710,12 @@ export const INCIDENTS_POOL: IncidentTemplate[] = [
       {
         kind: 'talk', label: 'Уговорить рационировать', time: 45, power: 0, risk: 0.35,
         success: { text: 'Лечить только самых юных и спасаемых — чудовищный, но необходимый компромисс.', balance: 1 },
-        fail: { text: 'Он не может выбирать, кому отказать, — продолжает всех.', balance: -1 },
+        fail: { text: 'Он не может выбирать, кому отказать, — продолжает всех, и Реестр кренится дальше.', balance: -1, license: 4 },
       },
       {
         kind: 'paper', label: 'Пробить официальную квоту', time: 50, power: 0, risk: 0.4,
         success: { text: 'Легализовать часть случаев — кровотечение Реестра снижается.', balance: 1 },
-        fail: { text: 'Квоту не дают — утечка продолжается.', balance: -1 },
+        fail: { text: 'Квоту не дают — утечка продолжается, лицензии всё так же текут Тьме.', balance: -1, license: 4 },
       },
       {
         kind: 'ignore', label: 'Оставить как есть', time: 5, power: 0,
@@ -837,12 +837,12 @@ export const INCIDENTS_POOL: IncidentTemplate[] = [
     options: [
       {
         kind: 'paper', label: 'Оформить нарушение', time: 40, power: 0,
-        success: { text: 'Законно — но кто будет облегчать уход, когда её отстранят?', reward: 6 },
+        success: { text: 'Законно — но кто будет облегчать уход, когда её отстранят? Утечка в Реестр остановлена.', balance: 1 },
       },
       {
         kind: 'talk', label: 'Договориться о рамках и надзоре', time: 45, power: 0, risk: 0.3,
         success: { text: 'Легализовать хоть частично — под надзором.', balance: 1 },
-        fail: { text: 'Не согласна на рамки — продолжает по-своему.' },
+        fail: { text: 'Не согласна на рамки — продолжает по-своему, Реестр кренится.', license: 6 },
       },
       {
         kind: 'force', label: 'Прекратить немедленно', time: 25, power: 15,
@@ -850,7 +850,7 @@ export const INCIDENTS_POOL: IncidentTemplate[] = [
       },
       {
         kind: 'ignore', label: 'Пусть продолжает', time: 5, power: 0,
-        success: { text: 'Тихое незаконное милосердие под вашим молчанием.' },
+        success: { text: 'Тихое незаконное милосердие под вашим молчанием — и её питание сверх нормы всё так же кормит Реестр в пользу Тьмы.', license: 6 },
       },
     ],
   },
@@ -1137,8 +1137,8 @@ export const INCIDENTS_POOL: IncidentTemplate[] = [
         fail: { text: 'Нарушитель нервничает от промедления.', balance: -1 },
       },
       {
-        kind: 'ignore', label: 'Отступить', time: 5, power: 0,
-        success: { text: 'Оставить без вмешательства — заложник на волю случая.', victims: 1, balance: -1 },
+        kind: 'force', label: 'Активировать печать (если низший-нарушитель)', time: 10, power: 0,
+        success: { text: 'Он низший с печатью и уже нарушил: активация мгновенна, законна, без Силы. Прах — и заложник свободен. Никакого боя, никакой лицензии.', saved: 1, balance: 1 },
       },
     ],
   },
