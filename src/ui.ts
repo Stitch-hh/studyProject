@@ -8,6 +8,8 @@ import {
   enemyTurn,
   formatTime,
   outOfTime,
+  payOptionCost,
+  resolveCombatOption,
   resolveWitness,
   START_POWER,
 } from './game/engine';
@@ -187,6 +189,18 @@ function renderIncident(): void {
 }
 
 function choose(opt: DecisionOption): void {
+  if (opt.combat) {
+    payOptionCost(state, opt);
+    renderCombat(
+      root,
+      (result) => {
+        const fx = resolveCombatOption(state, opt, result === 'win');
+        renderOutcome(fx.text, result !== 'win');
+      },
+      { enemy: opt.combat },
+    );
+    return;
+  }
   const outcome = applyDecision(state, rng, opt);
   if (outcome.witnessPrompt) {
     renderWitnessPrompt(outcome.failed);

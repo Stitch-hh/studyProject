@@ -96,6 +96,31 @@ export function applyDecision(
   return { effects: fx, failed, witnessPrompt };
 }
 
+/** Списать стоимость боевой опции (время/Сила) до запуска боя. */
+export function payOptionCost(state: NightState, opt: DecisionOption): void {
+  state.timeLeft = Math.max(0, state.timeLeft - opt.time);
+  state.power = Math.max(0, state.power - opt.power);
+}
+
+/** Применить исход боя к смене: победа — success, поражение — fail (или штраф). */
+export function resolveCombatOption(
+  state: NightState,
+  opt: DecisionOption,
+  won: boolean,
+): Effects {
+  const fx: Effects =
+    won
+      ? opt.success
+      : opt.fail ?? {
+          text: 'Бой проигран: противник ушёл, вы выжаты. Утром будет тяжёлый разговор.',
+          victims: 1,
+          balance: -1,
+        };
+  applyEffects(state, fx);
+  state.log.push(fx.text);
+  return fx;
+}
+
 export type WitnessChoice = 'erase' | 'leave';
 
 export function resolveWitness(state: NightState, choice: WitnessChoice): Effects {

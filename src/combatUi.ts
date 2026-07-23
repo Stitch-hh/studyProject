@@ -5,6 +5,7 @@ import {
   createCombat,
   playerAct,
   startCombat,
+  type CombatOpts,
   type CombatState,
   type FxEvent,
 } from './game/combat';
@@ -35,7 +36,7 @@ interface FloatNum {
 let state: CombatState;
 let rng: Rng;
 let root: HTMLElement;
-let onExit: () => void;
+let onExit: (outcome: 'win' | 'lose') => void;
 
 let canvas: HTMLCanvasElement;
 let ctx: CanvasRenderingContext2D;
@@ -49,11 +50,18 @@ let rafId = 0;
 let selectedSpell: string | null = null;
 let invest = 0;
 
-export function renderCombat(mount: HTMLElement, exit: () => void): void {
+export function renderCombat(
+  mount: HTMLElement,
+  exit: (outcome: 'win' | 'lose') => void,
+  opts: CombatOpts = {},
+): void {
   root = mount;
   onExit = exit;
+  particles = [];
+  floats = [];
+  lastLogLen = 0;
   rng = new Rng(randomSeed());
-  state = createCombat();
+  state = createCombat(opts);
   startCombat(state, rng);
   buildDom();
   loop();
@@ -155,7 +163,7 @@ function renderActions(): void {
     back.addEventListener('click', () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', sizeCanvas);
-      onExit();
+      onExit(state.outcome === 'win' ? 'win' : 'lose');
     });
     box.append(res, back);
     return;

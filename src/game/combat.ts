@@ -102,15 +102,50 @@ export function makeVampire(): Combatant {
   };
 }
 
-export function createCombat(): CombatState {
+export function makeWitch(): Combatant {
+  return {
+    id: 'enemy',
+    name: 'Ведьма-браконьерша',
+    side: 'dark',
+    level: 4,
+    hp: 260,
+    hpMax: 260,
+    power: 90,
+    powerMax: 90,
+    overflow: 0,
+    speed: 6, // сила в закладках, а не в скорости
+    gauge: 0,
+    shield: 40, // соляной круг держит
+    asleep: 0,
+    casting: null,
+    reflexes: [],
+    undead: false,
+    spellbook: ['morpheus', 'press', 'triple'],
+  };
+}
+
+export interface CombatOpts {
+  enemy?: 'vampire' | 'witch';
+  amuletCharge?: number;
+}
+
+const ENEMY_TAUNT: Record<'vampire' | 'witch', string> = {
+  vampire: 'Высший вампир скалится: «Мальчик, ты не в той весовой».',
+  witch: 'Ведьма улыбается из центра соляного круга: «Ты зашёл на моё поле».',
+};
+
+export function createCombat(opts: CombatOpts = {}): CombatState {
+  const kind = opts.enemy ?? 'vampire';
+  const enemy = kind === 'witch' ? makeWitch() : makeVampire();
+  const amuletCharge = opts.amuletCharge ?? (kind === 'vampire' ? 1000 : 0);
   return {
     player: makeMage(),
-    enemy: makeVampire(),
+    enemy,
     tick: 0,
     over: false,
     outcome: null,
-    log: [{ text: 'Высший вампир скалится: «Мальчик, ты не в той весовой».', kind: 'info' }],
-    amuletCharge: 1000,
+    log: [{ text: ENEMY_TAUNT[kind], kind: 'info' }],
+    amuletCharge,
     pendingFx: [],
   };
 }

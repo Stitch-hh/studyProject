@@ -19,6 +19,9 @@ export interface Effects {
   reputation?: number;
 }
 
+/** Тип противника для боевой сцены. */
+export type CombatKind = 'vampire' | 'witch';
+
 export interface DecisionOption {
   kind: OptionKind;
   label: string;
@@ -26,6 +29,8 @@ export interface DecisionOption {
   power: number;
   /** Вероятность провала [0..1]; отсутствие — исход гарантирован. */
   risk?: number;
+  /** Если задано — выбор запускает боевую сцену; success = победа, fail = поражение. */
+  combat?: CombatKind;
   success: Effects;
   fail?: Effects;
 }
