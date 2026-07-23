@@ -66,8 +66,10 @@ export function makeMage(): Combatant {
     level: 5,
     hp: 120,
     hpMax: 120,
-    power: 55,
-    powerMax: 55,
+    // Маги держат большой резерв Силы (см. LORE): оверчардж работает и со
+    // своего пула, а амулет — уже сверх-усиление, а не единственный путь.
+    power: 200,
+    powerMax: 200,
     overflow: 0,
     speed: 7,
     gauge: 0,
@@ -194,6 +196,13 @@ function applyDamage(target: Combatant, dmg: number): number {
   return real;
 }
 
+/** Затухающий оверчардж для длительности контроля: влить больше — держать
+ *  дольше, но с убывающей отдачей (log2) и жёстким потолком. Не превращается
+ *  в вечный лок даже при огромном вложении. */
+function controlFactor(scale: number): number {
+  return 1 + Math.log2(Math.max(1, Math.min(scale, 64)));
+}
+
 function resolveSpell(s: CombatState, caster: Combatant, target: Combatant, spell: Spell, invested: number, rng: Rng): void {
   const scale = invested / spell.baseCost;
   s.pendingFx.push({ type: spell.type, fromSide: caster.side, magnitude: scale, crit: scale >= 20 });
@@ -216,7 +225,7 @@ function resolveSpell(s: CombatState, caster: Combatant, target: Combatant, spel
     if (spell.livingOnly && target.undead) {
       log(s, `${caster.name}: ${spell.name} — на нежить не действует.`, 'effect');
     } else {
-      const ticks = Math.round((spell.effectPower ?? 0) * Math.min(scale, 3));
+      const ticks = Math.round((spell.effectPower ?? 0) * controlFactor(scale));
       target.asleep = Math.max(target.asleep, ticks);
       log(s, `${caster.name}: ${spell.name} — ${target.name} засыпает на ${ticks} т.`, 'effect');
     }
@@ -226,7 +235,7 @@ function resolveSpell(s: CombatState, caster: Combatant, target: Combatant, spel
       log(s, `${caster.name}: ${spell.name} ломает волю ${target.name} — каст сорван.`, 'effect');
       target.casting = null;
     }
-    const ticks = Math.round((spell.effectPower ?? 0) * Math.min(scale, 2));
+    const ticks = Math.round((spell.effectPower ?? 0) * controlFactor(scale));
     target.asleep = Math.max(target.asleep, ticks);
     log(s, `${caster.name}: ${spell.name} — ${target.name} застывает на ${ticks} т., подчиняясь приказу.`, 'effect');
   }
@@ -310,8 +319,9 @@ export function playerAct(s: CombatState, action: PlayerAction, rng: Rng): void 
     }
     p.gauge = 0;
   } else if (action.kind === 'channel') {
-    p.power = Math.min(p.powerMax, p.power + 18);
-    log(s, 'Вы черпаете Силу из окружения (+18 резерва).', 'heal');
+    const gain = Math.round(p.powerMax * 0.2);
+    p.power = Math.min(p.powerMax, p.power + gain);
+    log(s, `Вы черпаете Силу из окружения (+${gain} резерва).`, 'heal');
     p.gauge = 0;
   } else {
     p.gauge = 0;
