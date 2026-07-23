@@ -21,7 +21,15 @@ export interface Spell {
   /** Тиков плетения с нуля (0 — мгновенное, но обычно вешается на рефлекс). */
   castTicks: number;
   /** Спецэффект. */
-  effect?: 'interrupt' | 'shield' | 'sleep' | 'drain' | 'dominate';
+  effect?:
+    | 'interrupt'
+    | 'shield'
+    | 'sleep'
+    | 'drain'
+    | 'dominate'
+    | 'heal'
+    | 'dispel'
+    | 'lifedrain';
   /** Величина эффекта (щит/сон/выпитая Сила) при baseCost. */
   effectPower?: number;
   /** Действует только на живых (нежить/машины невосприимчивы). */
@@ -164,6 +172,81 @@ export const SPELLS: Record<string, Spell> = {
     baseDamage: 5,
     castTicks: 3,
     desc: 'Ломает технику и хрупкие плетения. Бьёт по неживому — лицензий не требует.',
+  },
+
+  // — Вторая волна. Провенанс сверить с каноном (см. LORE): 📖 книга, 🎮 онлайн-игра,
+  //   🛠 наша адаптация, ❓ требует проверки арбитром канона.
+  iceblade: {
+    id: 'iceblade',
+    name: 'Ледяное копьё', // 🛠 холодная атака (у Фриза был только «срыв»)
+    type: 'cold',
+    baseCost: 10,
+    baseDamage: 12,
+    castTicks: 3,
+    desc: 'Отточенный клин льда. Холодный урон, хорошо принимает переизбыток.',
+  },
+  firerain: {
+    id: 'firerain',
+    name: 'Огненный дождь', // ❓ название — сверить с таблицей онлайн-игры
+    type: 'fire',
+    baseCost: 20,
+    baseDamage: 30,
+    castTicks: 6,
+    desc: 'Долгий тяжёлый каст — но при вливании Силы выдаёт огромные числа.',
+  },
+  morok: {
+    id: 'morok',
+    name: 'Морок', // 📖 иллюзия — в бою сбивает противника с прицела
+    type: 'mental',
+    baseCost: 7,
+    baseDamage: 0,
+    castTicks: 2,
+    effect: 'sleep',
+    effectPower: 2,
+    desc: 'Иллюзия-обманка: враг бьёт по фантому и теряет ход. Дёшево и быстро.',
+  },
+  negation: {
+    id: 'negation',
+    name: 'Сфера отрицания', // 📖 (Гесер/Завулон) — мощный барьер, у нас масштаб 🛠
+    type: 'barrier',
+    baseCost: 16,
+    baseDamage: 0,
+    castTicks: 3,
+    effect: 'shield',
+    effectPower: 45,
+    desc: 'Купол, гасящий чужую волю. Огромный барьер — особенно на овердрайве.',
+  },
+  heal: {
+    id: 'heal',
+    name: 'Белое марево', // ❓ трактовка как лечение — сверить; 📖 Светлые целят
+    type: 'vital',
+    baseCost: 14,
+    baseDamage: 0,
+    castTicks: 4,
+    effect: 'heal',
+    effectPower: 30,
+    desc: 'Светлое исцеление: затягивает раны. На овердрайве поднимает почти из ничего.',
+  },
+  dispel: {
+    id: 'dispel',
+    name: 'Снятие', // 📖 развеивание чужих плетений
+    type: 'barrier',
+    baseCost: 9,
+    baseDamage: 0,
+    castTicks: 2,
+    effect: 'dispel',
+    desc: 'Срывает с противника щиты и незавершённые касты. Обнуляет его защиту.',
+  },
+  lifedrain: {
+    id: 'lifedrain',
+    name: 'Вытягивание Силы', // 🛠 тёмный дренаж по живому (у нежити — Серый молебен)
+    type: 'vital',
+    baseCost: 12,
+    baseDamage: 9,
+    castTicks: 4,
+    effect: 'lifedrain',
+    effectPower: 50,
+    desc: 'Тёмное плетение: ранит и возвращает часть отнятого кастующему.',
   },
 };
 

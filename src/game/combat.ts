@@ -77,8 +77,9 @@ export function makeMage(): Combatant {
     reflexes: ['freeze', 'shield'],
     undead: false,
     spellbook: [
-      'fireball', 'triple', 'press', 'freeze', 'morpheus', 'shield', 'greyprayer',
-      'opium', 'dominant', 'sphere', 'remoral', 'gremlin',
+      'fireball', 'triple', 'press', 'iceblade', 'firerain', 'gremlin',
+      'freeze', 'morpheus', 'opium', 'morok', 'dominant', 'remoral',
+      'shield', 'sphere', 'negation', 'dispel', 'heal', 'greyprayer',
     ],
   };
 }
@@ -101,7 +102,7 @@ export function makeVampire(): Combatant {
     casting: null,
     reflexes: [],
     undead: true,
-    spellbook: ['triple', 'press', 'fireball'],
+    spellbook: ['triple', 'press', 'fireball', 'morok', 'dominant', 'lifedrain'],
   };
 }
 
@@ -123,7 +124,7 @@ export function makeWitch(): Combatant {
     casting: null,
     reflexes: [],
     undead: false,
-    spellbook: ['morpheus', 'press', 'triple'],
+    spellbook: ['morpheus', 'press', 'triple', 'opium', 'lifedrain', 'negation'],
   };
 }
 
@@ -229,6 +230,23 @@ function resolveSpell(s: CombatState, caster: Combatant, target: Combatant, spel
     target.asleep = Math.max(target.asleep, ticks);
     log(s, `${caster.name}: ${spell.name} — ${target.name} застывает на ${ticks} т., подчиняясь приказу.`, 'effect');
   }
+  if (spell.effect === 'heal') {
+    const amt = Math.round((spell.effectPower ?? 0) * Math.min(scale, 4));
+    caster.hp = Math.min(caster.hpMax, caster.hp + amt);
+    log(s, `${caster.name}: ${spell.name} — восстановлено ${amt} HP.`, 'heal');
+  }
+  if (spell.effect === 'dispel') {
+    const had = target.shield > 0 || Boolean(target.casting);
+    target.shield = 0;
+    if (target.casting) target.casting = null;
+    log(
+      s,
+      had
+        ? `${caster.name}: ${spell.name} — с ${target.name} сорваны щиты и плетения.`
+        : `${caster.name}: ${spell.name} — снимать нечего.`,
+      'effect',
+    );
+  }
   if (spell.effect === 'drain') {
     if (target.undead) {
       const drained = Math.round((spell.effectPower ?? 0) * scale);
@@ -241,6 +259,11 @@ function resolveSpell(s: CombatState, caster: Combatant, target: Combatant, spel
     let { dmg, crit } = computeDamage(spell, invested, rng);
     if (spell.effect === 'drain' && target.undead) dmg = Math.round(dmg * 1.5); // молебен по нежити
     const real = applyDamage(target, dmg);
+    if (spell.effect === 'lifedrain') {
+      const healed = Math.round((real * (spell.effectPower ?? 0)) / 100);
+      caster.hp = Math.min(caster.hpMax, caster.hp + healed);
+      if (healed > 0) log(s, `${caster.name}: ${spell.name} возвращает ${healed} жизни.`, 'heal');
+    }
     if (crit) {
       log(s, `⚡ ОВЕРДРАЙВ! ${caster.name}: ${spell.name} на ${real} урона!`, 'overdrive');
     } else {
@@ -369,7 +392,7 @@ function checkEnd(s: CombatState): boolean {
   if (s.enemy.hp <= 0) {
     s.over = true;
     s.outcome = 'win';
-    log(s, 'Высший вампир осыпается прахом. Такое будут рассказывать стажёрам.', 'crit');
+    log(s, `${s.enemy.name} повержен. Такое будут рассказывать стажёрам.`, 'crit');
     return true;
   }
   if (s.player.hp <= 0) {
