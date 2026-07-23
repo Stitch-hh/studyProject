@@ -21,9 +21,11 @@ export interface Spell {
   /** Тиков плетения с нуля (0 — мгновенное, но обычно вешается на рефлекс). */
   castTicks: number;
   /** Спецэффект. */
-  effect?: 'interrupt' | 'shield' | 'sleep' | 'drain';
+  effect?: 'interrupt' | 'shield' | 'sleep' | 'drain' | 'dominate';
   /** Величина эффекта (щит/сон/выпитая Сила) при baseCost. */
   effectPower?: number;
+  /** Действует только на живых (нежить/машины невосприимчивы). */
+  livingOnly?: boolean;
   desc: string;
 }
 
@@ -108,6 +110,60 @@ export const SPELLS: Record<string, Spell> = {
     effect: 'drain',
     effectPower: 10,
     desc: 'Против нежити: ослабляет, замедляет и высасывает Силу.',
+  },
+  opium: {
+    id: 'opium',
+    name: 'Опиум',
+    type: 'mental',
+    baseCost: 18,
+    baseDamage: 0,
+    castTicks: 5,
+    effect: 'sleep',
+    effectPower: 5,
+    desc: 'Тяжёлый наркотический сон — глубже и дольше Морфея. Дорогое плетение.',
+  },
+  dominant: {
+    id: 'dominant',
+    name: 'Доминанта',
+    type: 'mental',
+    baseCost: 20,
+    baseDamage: 0,
+    castTicks: 4,
+    effect: 'dominate',
+    effectPower: 2,
+    desc: 'Приказ, которому нельзя не подчиниться: срывает чужой каст и сбивает противника с хода.',
+  },
+  sphere: {
+    id: 'sphere',
+    name: 'Сфера невнимания',
+    type: 'mental',
+    baseCost: 10,
+    baseDamage: 0,
+    castTicks: 2,
+    effect: 'shield',
+    effectPower: 22,
+    desc: 'Взгляд соскальзывает: удары уходят мимо. Барьер из чужого невнимания.',
+  },
+  remoral: {
+    id: 'remoral',
+    name: 'Реморализация',
+    type: 'mental',
+    baseCost: 16,
+    baseDamage: 0,
+    castTicks: 4,
+    effect: 'sleep',
+    effectPower: 4,
+    livingOnly: true,
+    desc: 'Светлая догма: живой враг не может поднять на вас руку. На нежить не действует.',
+  },
+  gremlin: {
+    id: 'gremlin',
+    name: 'Гремлин',
+    type: 'physical',
+    baseCost: 8,
+    baseDamage: 5,
+    castTicks: 3,
+    desc: 'Ломает технику и хрупкие плетения. Бьёт по неживому — лицензий не требует.',
   },
 };
 

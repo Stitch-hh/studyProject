@@ -76,7 +76,10 @@ export function makeMage(): Combatant {
     casting: null,
     reflexes: ['freeze', 'shield'],
     undead: false,
-    spellbook: ['fireball', 'triple', 'press', 'freeze', 'morpheus', 'shield', 'greyprayer'],
+    spellbook: [
+      'fireball', 'triple', 'press', 'freeze', 'morpheus', 'shield', 'greyprayer',
+      'opium', 'dominant', 'sphere', 'remoral', 'gremlin',
+    ],
   };
 }
 
@@ -209,9 +212,22 @@ function resolveSpell(s: CombatState, caster: Combatant, target: Combatant, spel
     }
   }
   if (spell.effect === 'sleep') {
-    const ticks = Math.round((spell.effectPower ?? 0) * Math.min(scale, 3));
+    if (spell.livingOnly && target.undead) {
+      log(s, `${caster.name}: ${spell.name} — на нежить не действует.`, 'effect');
+    } else {
+      const ticks = Math.round((spell.effectPower ?? 0) * Math.min(scale, 3));
+      target.asleep = Math.max(target.asleep, ticks);
+      log(s, `${caster.name}: ${spell.name} — ${target.name} засыпает на ${ticks} т.`, 'effect');
+    }
+  }
+  if (spell.effect === 'dominate') {
+    if (target.casting) {
+      log(s, `${caster.name}: ${spell.name} ломает волю ${target.name} — каст сорван.`, 'effect');
+      target.casting = null;
+    }
+    const ticks = Math.round((spell.effectPower ?? 0) * Math.min(scale, 2));
     target.asleep = Math.max(target.asleep, ticks);
-    log(s, `${caster.name}: ${spell.name} — ${target.name} засыпает на ${ticks} т.`, 'effect');
+    log(s, `${caster.name}: ${spell.name} — ${target.name} застывает на ${ticks} т., подчиняясь приказу.`, 'effect');
   }
   if (spell.effect === 'drain') {
     if (target.undead) {
