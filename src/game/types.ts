@@ -49,6 +49,12 @@ export interface IncidentInstance {
   tpl: IncidentTemplate;
   district: string;
   witness: boolean;
+  /** Заявка размечена аналитиком на планёрке — риск ниже, подвох известен. */
+  prepped?: boolean;
+  /** Заявку прогадали — угроза выросла к утру. */
+  escalated?: boolean;
+  /** Множитель риска опций (prep — 0.5, эскалация — 1.4). */
+  riskMod?: number;
 }
 
 export interface EnemyResponse {

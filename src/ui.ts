@@ -3,8 +3,8 @@ import {
   applyDecision,
   autoResolveRest,
   canAfford,
-  createNight,
   currentIncident,
+  effectiveRisk,
   enemyTurn,
   formatTime,
   outOfTime,
@@ -13,8 +13,9 @@ import {
   resolveWitness,
   START_POWER,
 } from './game/engine';
+import { buildNight, createBriefing, type Briefing } from './game/leads';
 import { randomSeed, seedFromUrl, type Rng } from './game/rng';
-import type { DecisionOption, NightState } from './game/types';
+import type { DecisionOption, IncidentInstance, NightState } from './game/types';
 import { renderCombat } from './combatUi';
 
 const KIND_LABEL: Record<DecisionOption['kind'], string> = {
@@ -28,6 +29,8 @@ const KIND_LABEL: Record<DecisionOption['kind'], string> = {
 let root: HTMLElement;
 let state: NightState;
 let rng: Rng;
+let briefing: Briefing;
+let selected: Set<string>;
 
 export function boot(el: HTMLElement): void {
   root = el;
@@ -82,10 +85,83 @@ function renderIntro(): void {
 
 function startNight(seed: number): void {
   setSeedInUrl(seed);
-  const night = createNight(seed);
-  state = night.state;
-  rng = night.rng;
-  renderIncident();
+  const b = createBriefing(seed);
+  briefing = b.briefing;
+  rng = b.rng;
+  selected = new Set();
+  renderBriefing();
+}
+
+function renderBriefing(): void {
+  root.innerHTML = '';
+  const scr = el('div', 'screen');
+  scr.append(el('div', 'title small', 'РАЗБОР ЗАЯВОК'));
+  scr.append(
+    el(
+      'p',
+      'intro-text',
+      'Смена — 12 часов, а заявок больше, чем часов аналитика. ' +
+        'Часть сводок — реальные угрозы, часть — жёлтая пресса. ' +
+        'Размеченное дело пойдёт с меньшим риском; неразмеченная угроза к утру вырастет.',
+    ),
+  );
+
+  const meter = el('div', 'brief-meter');
+  scr.append(meter);
+
+  const list = el('div', 'lead-list');
+  for (const lead of briefing.leads) {
+    const cardCls = () => `lead ${selected.has(lead.id) ? 'sel' : ''}`;
+    const card = el('button', cardCls());
+    card.innerHTML =
+      `<div class="lead-head"><span class="lead-title">${lead.title}</span>` +
+      `<span class="lead-mark">${selected.has(lead.id) ? '★ в работе' : '＋ разметить'}</span></div>` +
+      `<div class="lead-blurb">${lead.blurb}</div>` +
+      `<div class="lead-signal">${lead.signal}</div>`;
+    card.addEventListener('click', () => {
+      if (selected.has(lead.id)) {
+        selected.delete(lead.id);
+      } else if (selected.size < briefing.points) {
+        selected.add(lead.id);
+      }
+      // перерисовать метку и метр без пересборки экрана
+      card.className = cardCls();
+      const mk = card.querySelector('.lead-mark') as HTMLElement;
+      mk.textContent = selected.has(lead.id) ? '★ в работе' : '＋ разметить';
+      updateMeter(meter);
+      updateLeadDisabled(list);
+    });
+    list.append(card);
+  }
+  scr.append(list);
+  updateMeter(meter);
+  updateLeadDisabled(list);
+
+  const start = el('button', 'btn primary', 'Заступить на смену');
+  start.addEventListener('click', () => {
+    state = buildNight(briefing, rng, selected);
+    renderIncident();
+  });
+  scr.append(start);
+  root.append(scr);
+}
+
+function updateMeter(meter: HTMLElement): void {
+  const left = briefing.points - selected.size;
+  meter.innerHTML =
+    `<span class="brief-label">Часы аналитика:</span> ` +
+    Array.from({ length: briefing.points }, (_, i) =>
+      `<span class="hour ${i < selected.size ? 'used' : ''}"></span>`,
+    ).join('') +
+    ` <span class="dim">осталось ${left}</span>`;
+}
+
+function updateLeadDisabled(list: HTMLElement): void {
+  const full = selected.size >= briefing.points;
+  list.querySelectorAll('.lead').forEach((node) => {
+    const card = node as HTMLElement;
+    card.classList.toggle('locked', full && !card.classList.contains('sel'));
+  });
 }
 
 function statsBar(): HTMLElement {
@@ -119,7 +195,7 @@ function statsBar(): HTMLElement {
   return bar;
 }
 
-function optionCosts(opt: DecisionOption): string {
+function optionCosts(opt: DecisionOption, inc: IncidentInstance): string {
   const parts: string[] = [`${opt.time} мин`];
   if (opt.power > 0) parts.push(`${opt.power} Силы`);
   const money = opt.success.money ?? 0;
@@ -128,7 +204,13 @@ function optionCosts(opt: DecisionOption): string {
   if (lvl > 0) parts.push(`лицензия ${lvl}-го ур. Тьме`);
   const rew = opt.success.reward ?? 0;
   if (rew > 0) parts.push(`компенсация ${rew}-го ур. Свету`);
-  if (opt.risk) parts.push(`риск ${Math.round(opt.risk * 100)}%`);
+  if (opt.combat) parts.push('бой');
+  const risk = effectiveRisk(opt, inc);
+  if (risk > 0) {
+    const base = opt.risk ?? 0;
+    const tag = inc.prepped && risk < base ? ' ↓' : inc.escalated && risk > base ? ' ↑' : '';
+    parts.push(`риск ${Math.round(risk * 100)}%${tag}`);
+  }
   return parts.join(' · ');
 }
 
@@ -157,6 +239,24 @@ function renderIncident(): void {
     el('h2', 'card-title', inc.tpl.title),
     el('p', 'card-text', inc.tpl.text),
   );
+  if (inc.prepped) {
+    card.append(
+      el(
+        'div',
+        'prep-banner',
+        '📋 Размечено на планёрке: подвох известен заранее — риск в этом деле ниже.',
+      ),
+    );
+  }
+  if (inc.escalated) {
+    card.append(
+      el(
+        'div',
+        'complication escalated',
+        '⚠ Заявку прогадали на разборе — пока вы занимались другими, угроза выросла. Риск выше обычного.',
+      ),
+    );
+  }
   if (inc.witness) {
     card.append(
       el(
@@ -174,7 +274,7 @@ function renderIncident(): void {
       `option kind-${opt.kind}`,
       `<span class="option-kind">${KIND_LABEL[opt.kind]}</span>` +
         `<span class="option-label">${opt.label}</span>` +
-        `<span class="option-costs">${optionCosts(opt)}</span>`,
+        `<span class="option-costs">${optionCosts(opt, inc)}</span>`,
     ) as HTMLButtonElement;
     if (!canAfford(state, opt)) {
       btn.disabled = true;

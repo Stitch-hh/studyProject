@@ -66,6 +66,12 @@ export function canAfford(state: NightState, opt: DecisionOption): boolean {
   return state.power >= opt.power;
 }
 
+/** Риск опции с учётом разметки аналитиком (prep снижает, эскалация повышает). */
+export function effectiveRisk(opt: DecisionOption, inc: IncidentInstance | null): number {
+  if (opt.risk === undefined) return 0;
+  return Math.max(0, Math.min(0.95, opt.risk * (inc?.riskMod ?? 1)));
+}
+
 function applyEffects(state: NightState, fx: Effects): void {
   state.saved += fx.saved ?? 0;
   state.victims += fx.victims ?? 0;
@@ -86,7 +92,8 @@ export function applyDecision(
   state.timeLeft = Math.max(0, state.timeLeft - opt.time);
   state.power = Math.max(0, state.power - opt.power);
 
-  const failed = opt.risk !== undefined && opt.fail !== undefined && rng.chance(opt.risk);
+  const risk = effectiveRisk(opt, inc);
+  const failed = risk > 0 && opt.fail !== undefined && rng.chance(risk);
   const fx = failed && opt.fail ? opt.fail : opt.success;
   applyEffects(state, fx);
   state.log.push(fx.text);
