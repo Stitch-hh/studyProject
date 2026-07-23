@@ -16,7 +16,7 @@ export function licenseWeight(level: number): number {
   return Math.max(1, Math.round((8 - level) / 2));
 }
 
-export const SHIFT_MINUTES = 480;
+export const SHIFT_MINUTES = 720; // канон: смена 12 часов (20:00 → 08:00)
 export const START_POWER = 100;
 export const TRAVEL_MINUTES = 20;
 export const INCIDENTS_PER_NIGHT = 6;
@@ -201,7 +201,7 @@ export function enemyTurn(state: NightState, rng: Rng): NightReport {
 
 export function formatTime(minutesLeft: number): string {
   const elapsed = SHIFT_MINUTES - minutesLeft;
-  const startHour = 22;
+  const startHour = 20;
   const h = (startHour + Math.floor(elapsed / 60)) % 24;
   const m = elapsed % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
