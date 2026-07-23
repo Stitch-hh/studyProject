@@ -1,4 +1,5 @@
-import { DISTRICTS, ENEMY_RESPONSES, INCIDENTS } from './data';
+import { DISTRICTS, ENEMY_RESPONSES } from './data';
+import { INCIDENTS_POOL } from './incidents_pool';
 import { Rng } from './rng';
 import type {
   DecisionOption,
@@ -32,7 +33,7 @@ export interface DecisionOutcome {
 
 export function createNight(seed: number): { state: NightState; rng: Rng } {
   const rng = new Rng(seed);
-  const picked = rng.shuffle(INCIDENTS).slice(0, INCIDENTS_PER_NIGHT);
+  const picked = rng.shuffle(INCIDENTS_POOL).slice(0, INCIDENTS_PER_NIGHT);
   const incidents: IncidentInstance[] = picked.map((tpl) => ({
     tpl,
     district: rng.pick(DISTRICTS),
