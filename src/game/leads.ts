@@ -77,21 +77,23 @@ const REAL_SIGNALS = [
 ];
 const QUIET_REAL_SIGNAL = 'След слабый, почти на фоне. Легко принять за пустышку.';
 
-function firstSentence(text: string): string {
-  const m = text.match(/^[^.!?]*[.!?]/);
-  return (m ? m[0] : text).trim();
-}
+/**
+ * Пул первичных: финалы цепочек (kind 'finale') не выдаются случайной ночью —
+ * они предполагают события, которых игрок ещё не видел (капстоун «Общая тень»
+ * и будущие). Затравки/повторяющиеся — можно: они нити ОТКРЫВАЮТ.
+ */
+const PRIMARY_POOL = INCIDENTS_POOL.filter((t) => t.kind !== 'finale');
 
 export function createBriefing(seed: number): { briefing: Briefing; rng: Rng } {
   const rng = new Rng(seed);
 
-  const realTpls = rng.shuffle(INCIDENTS_POOL).slice(0, REAL_LEADS);
+  const realTpls = rng.shuffle(PRIMARY_POOL).slice(0, REAL_LEADS);
   const reals: Lead[] = realTpls.map((tpl, i) => ({
     id: `r${i}`,
     kind: 'real',
     tpl,
     title: tpl.title,
-    blurb: firstSentence(tpl.text),
+    blurb: tpl.lead,
     signal: rng.pick(REAL_SIGNALS),
   }));
   // одна реальная угроза маскируется под пустышку — цена невнимательности

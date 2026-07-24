@@ -35,10 +35,20 @@ export interface DecisionOption {
   fail?: Effects;
 }
 
+/**
+ * Тип инцидента по леджеру (INCIDENTS_LIGHT): base — самодостаточный,
+ * seed — [затравка] с нитью во 2-й круг, repeating — [повторяющийся],
+ * finale — капстоун круга (в пул первичных не выдаётся).
+ */
+export type IncidentKind = 'base' | 'seed' | 'repeating' | 'finale';
+
 export interface IncidentTemplate {
   id: string;
   title: string;
   creature: string;
+  kind: IncidentKind;
+  /** Тизер для планёрки: сводка диспетчера — источник + наблюдение, без сути. */
+  lead: string;
   text: string;
   /** Может ли инцидент получить осложнение «свидетель». */
   canWitness?: boolean;
