@@ -58,7 +58,7 @@ function renderIntro(): void {
     el(
       'div',
       'subtitle',
-      'Ночная стража. Прототип этапа&nbsp;0: одна смена, шесть вызовов, Реестр помнит всё.',
+      'Ночная стража. Одна смена, пять вызовов, Реестр помнит всё.',
     ),
     el(
       'p',
@@ -68,16 +68,20 @@ function renderIntro(): void {
         'Смена начинается в 20:00 и закончится в 08:00, чего бы это ни стоило.',
     ),
   );
-  const startBtn = el('button', 'btn primary', 'Заступить на смену');
-  startBtn.addEventListener('click', () => startNight(randomSeed()));
+  // Сид из ссылки — главная кнопка: ссылка на смену должна открывать ЭТУ смену.
   const seed = seedFromUrl();
-  scr.append(startBtn);
   if (seed !== null) {
-    const replayBtn = el('button', 'btn', `Повторить смену #${seed}`);
-    replayBtn.addEventListener('click', () => startNight(seed));
-    scr.append(replayBtn);
+    const startBtn = el('button', 'btn primary', `Заступить на смену #${seed}`);
+    startBtn.addEventListener('click', () => startNight(seed));
+    const randomBtn = el('button', 'btn', 'Случайная смена');
+    randomBtn.addEventListener('click', () => startNight(randomSeed()));
+    scr.append(startBtn, randomBtn);
+  } else {
+    const startBtn = el('button', 'btn primary', 'Заступить на смену');
+    startBtn.addEventListener('click', () => startNight(randomSeed()));
+    scr.append(startBtn);
   }
-  const combatBtn = el('button', 'btn', '⚔ Испытать бой (этап 0.5)');
+  const combatBtn = el('button', 'btn', '⚔ Тренировочный бой');
   combatBtn.addEventListener('click', () => renderCombat(root, renderIntro));
   scr.append(combatBtn);
   root.append(scr);

@@ -1,5 +1,4 @@
-import { DISTRICTS, ENEMY_RESPONSES } from './data';
-import { INCIDENTS_POOL } from './incidents_pool';
+import { ENEMY_RESPONSES } from './data';
 import { Rng } from './rng';
 import type {
   DecisionOption,
@@ -21,7 +20,6 @@ export const SHIFT_MINUTES = 720; // канон: смена 12 часов (20:00
 export const START_POWER = 100;
 export const START_MONEY = 200;
 export const TRAVEL_MINUTES = 20;
-export const INCIDENTS_PER_NIGHT = 6;
 export const WITNESS_CHANCE = 0.35;
 
 export interface DecisionOutcome {
@@ -29,33 +27,6 @@ export interface DecisionOutcome {
   failed: boolean;
   /** Требуется дорешение «свидетель» (силовое решение при свидетеле). */
   witnessPrompt: boolean;
-}
-
-export function createNight(seed: number): { state: NightState; rng: Rng } {
-  const rng = new Rng(seed);
-  const picked = rng.shuffle(INCIDENTS_POOL).slice(0, INCIDENTS_PER_NIGHT);
-  const incidents: IncidentInstance[] = picked.map((tpl) => ({
-    tpl,
-    district: rng.pick(DISTRICTS),
-    witness: Boolean(tpl.canWitness) && rng.chance(WITNESS_CHANCE),
-  }));
-  const state: NightState = {
-    seed,
-    timeLeft: SHIFT_MINUTES,
-    power: START_POWER,
-    balance: 0,
-    licenses: [],
-    saved: 0,
-    victims: 0,
-    exposure: 0,
-    rewards: [],
-    money: START_MONEY,
-    reputation: 0,
-    incidents,
-    idx: 0,
-    log: [],
-  };
-  return { state, rng };
 }
 
 export function currentIncident(state: NightState): IncidentInstance | null {
