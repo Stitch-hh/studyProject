@@ -10,7 +10,7 @@ import {
   type FxEvent,
 } from './game/combat';
 import { Rng, randomSeed } from './game/rng';
-import { SPELLS, TYPE_COLORS } from './game/spells';
+import { SPELLS, TYPE_COLORS, isUnlocked } from './game/spells';
 
 interface Particle {
   x: number;
@@ -198,21 +198,43 @@ function renderActions(): void {
     box.append(row);
   }
 
-  // Выбор заклинания
-  const grid = el('div', 'spell-grid', '');
+  // Выбор заклинания — по школам, с гейтингом по уровню Иного
+  const bySchool = new Map<string, string[]>();
   for (const id of p.spellbook) {
     const sp = SPELLS[id];
-    const b = el('button', `spell-cell ${selectedSpell === id ? 'sel' : ''}`, `${sp.name}<span class="sc">${sp.baseCost}⋅${sp.castTicks}т</span>`);
-    b.style.setProperty('--tc', TYPE_COLORS[sp.type]);
-    if (sp.baseCost > available(p)) b.classList.add('disabled');
-    b.addEventListener('click', () => {
-      selectedSpell = id;
-      invest = Math.min(available(p), Math.max(sp.baseCost, invest || sp.baseCost));
-      renderActions();
-    });
-    grid.append(b);
+    if (!bySchool.has(sp.school)) bySchool.set(sp.school, []);
+    bySchool.get(sp.school)!.push(id);
   }
-  box.append(grid);
+  const rank = (lvl: number) => (lvl === 0 ? -1 : lvl); // ВК — после 1-го
+  for (const [school, list] of bySchool) {
+    list.sort((a, b) => rank(SPELLS[b].level) - rank(SPELLS[a].level));
+    const sec = el('div', 'spell-school', `<div class="school-name">${school}</div>`);
+    const grid = el('div', 'spell-grid', '');
+    for (const id of list) {
+      const sp = SPELLS[id];
+      const locked = !isUnlocked(sp, p.level);
+      const lvl = sp.level === 0 ? 'ВК' : sp.level;
+      const b = el(
+        'button',
+        `spell-cell ${selectedSpell === id ? 'sel' : ''} ${locked ? 'locked' : ''}`,
+        `${sp.name}<span class="sc">ур.${lvl} · ${sp.baseCost}⋅${sp.castTicks}т${locked ? ' 🔒' : ''}</span>`,
+      );
+      b.style.setProperty('--tc', TYPE_COLORS[sp.type]);
+      if (locked || sp.baseCost > available(p)) b.classList.add('disabled');
+      if (!locked) {
+        b.addEventListener('click', () => {
+          selectedSpell = id;
+          invest = Math.min(available(p), Math.max(sp.baseCost, invest || sp.baseCost));
+          renderActions();
+        });
+      } else {
+        b.title = `Нужен ${lvl}-й уровень Иного`;
+      }
+      grid.append(b);
+    }
+    sec.append(grid);
+    box.append(sec);
+  }
 
   // Панель вложения Силы (овердрайв)
   if (selectedSpell) {

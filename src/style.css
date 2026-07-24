@@ -460,7 +460,14 @@ body {
 .spell-cell:hover { background: #1b2130; }
 .spell-cell.sel { border-color: var(--accent); background: #1f2632; }
 .spell-cell.disabled { opacity: 0.4; pointer-events: none; }
+.spell-cell.locked { opacity: 0.32; border-left-color: var(--line); }
 .spell-cell .sc { font-size: 11px; color: var(--text-dim); }
+
+.spell-school { margin-bottom: 8px; }
+.school-name {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-dim); margin: 6px 0 4px;
+}
 
 .invest { background: var(--bg-card); border: 1px solid var(--accent); padding: 12px; }
 .invest-head { font-size: 15px; margin-bottom: 8px; }

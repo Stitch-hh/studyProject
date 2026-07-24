@@ -1,5 +1,10 @@
 import { Rng } from './rng';
-import { SPELLS, type Spell } from './spells';
+import { SPELLS, SPELL_LIST, type Spell } from './spells';
+
+/** Все боевые заклинания общих школ — книга мага (UI гейтит по уровню). */
+export const MAGE_BOOK = SPELL_LIST.filter((s) => s.general && s.combat).map((s) => s.id);
+const bookOf = (school: string) =>
+  SPELL_LIST.filter((s) => s.school === school && s.combat).map((s) => s.id);
 
 // Пошаговый бой на «таймлайне» (ATB): у каждого бойца копится шкала действия;
 // заполнилась — его ход. Ядро player-fantasy — овердрайв: урон масштабируется
@@ -76,13 +81,9 @@ export function makeMage(): Combatant {
     shield: 0,
     asleep: 0,
     casting: null,
-    reflexes: ['freeze', 'shield'],
+    reflexes: ['schit_maga', 'friz'], // Щит мага + Фриз заготовлены на рефлекс
     undead: false,
-    spellbook: [
-      'fireball', 'triple', 'press', 'iceblade', 'firerain', 'gremlin',
-      'freeze', 'morpheus', 'opium', 'morok', 'dominant', 'remoral',
-      'shield', 'sphere', 'negation', 'dispel', 'heal', 'greyprayer',
-    ],
+    spellbook: MAGE_BOOK,
   };
 }
 
@@ -104,7 +105,7 @@ export function makeVampire(): Combatant {
     casting: null,
     reflexes: [],
     undead: true,
-    spellbook: ['triple', 'press', 'fireball', 'morok', 'dominant', 'lifedrain'],
+    spellbook: bookOf('Вампиризм'),
   };
 }
 
@@ -114,19 +115,19 @@ export function makeWitch(): Combatant {
     name: 'Ведьма-браконьерша',
     side: 'dark',
     level: 4,
-    hp: 260,
-    hpMax: 260,
-    power: 90,
-    powerMax: 90,
+    hp: 440,
+    hpMax: 440,
+    power: 130,
+    powerMax: 130,
     overflow: 0,
-    speed: 6, // сила в закладках, а не в скорости
+    speed: 7, // сила в закладках, а не в скорости
     gauge: 0,
-    shield: 40, // соляной круг держит
+    shield: 60, // соляной круг держит
     asleep: 0,
     casting: null,
     reflexes: [],
     undead: false,
-    spellbook: ['morpheus', 'press', 'triple', 'opium', 'lifedrain', 'negation'],
+    spellbook: bookOf('Ведовство'),
   };
 }
 
