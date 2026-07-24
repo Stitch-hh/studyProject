@@ -5,6 +5,14 @@ import { SPELLS, SPELL_LIST, type Spell } from './spells';
 export const MAGE_BOOK = SPELL_LIST.filter((s) => s.general && s.combat).map((s) => s.id);
 const bookOf = (school: string) =>
   SPELL_LIST.filter((s) => s.school === school && s.combat).map((s) => s.id);
+// Ведьма-браконьерша (класс проектируем сами): пока колдует из общих школ —
+// холод/инферно/контроль/дренаж, как «варит проклятия».
+const WITCH_BOOK = SPELL_LIST.filter(
+  (s) =>
+    s.combat &&
+    ['Кудесничество', 'Некромантия', 'Универсальная'].includes(s.school) &&
+    ['damage', 'control', 'drain', 'shield'].includes(s.category),
+).map((s) => s.id);
 
 // Пошаговый бой на «таймлайне» (ATB): у каждого бойца копится шкала действия;
 // заполнилась — его ход. Ядро player-fantasy — овердрайв: урон масштабируется
@@ -127,7 +135,7 @@ export function makeWitch(): Combatant {
     casting: null,
     reflexes: [],
     undead: false,
-    spellbook: bookOf('Ведовство'),
+    spellbook: WITCH_BOOK,
   };
 }
 
