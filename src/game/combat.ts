@@ -1,3 +1,4 @@
+import { START_POWER } from './engine';
 import { Rng } from './rng';
 import { SPELLS, SPELL_LIST, type Spell } from './spells';
 
@@ -71,7 +72,7 @@ export interface CombatState {
 
 export const OVERFLOW_DECAY = 12; // сколько переизбытка тает за тик
 
-export function makeMage(): Combatant {
+export function makeMage(startPower?: number): Combatant {
   return {
     id: 'player',
     name: 'Оперативник',
@@ -79,10 +80,9 @@ export function makeMage(): Combatant {
     level: 5,
     hp: 120,
     hpMax: 120,
-    // Маги держат большой резерв Силы (см. LORE): оверчардж работает и со
-    // своего пула, а амулет — уже сверх-усиление, а не единственный путь.
-    power: 200,
-    powerMax: 200,
+    // ЕДИНЫЙ резерв: бой стартует с текущей Силой смены и возвращает остаток.
+    power: Math.max(0, Math.min(startPower ?? START_POWER, START_POWER)),
+    powerMax: START_POWER,
     overflow: 0,
     speed: 7,
     gauge: 0,
@@ -142,6 +142,8 @@ export function makeWitch(): Combatant {
 export interface CombatOpts {
   enemy?: 'vampire' | 'witch';
   amuletCharge?: number;
+  /** Стартовая Сила игрока (текущая Сила смены). Без неё — полный резерв. */
+  playerPower?: number;
 }
 
 const ENEMY_TAUNT: Record<'vampire' | 'witch', string> = {
@@ -154,7 +156,7 @@ export function createCombat(opts: CombatOpts = {}): CombatState {
   const enemy = kind === 'witch' ? makeWitch() : makeVampire();
   const amuletCharge = opts.amuletCharge ?? (kind === 'vampire' ? 1000 : 0);
   return {
-    player: makeMage(),
+    player: makeMage(opts.playerPower),
     enemy,
     tick: 0,
     over: false,

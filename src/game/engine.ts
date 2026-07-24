@@ -17,7 +17,8 @@ export function licenseWeight(level: number): number {
 }
 
 export const SHIFT_MINUTES = 720; // канон: смена 12 часов (20:00 → 08:00)
-export const START_POWER = 100;
+/** Резерв Силы оперативника — ЕДИНЫЙ пул смены и боя (решение арбитра). */
+export const START_POWER = 200;
 export const START_MONEY = 200;
 export const TRAVEL_MINUTES = 20;
 export const WITNESS_CHANCE = 0.35;

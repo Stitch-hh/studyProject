@@ -31,6 +31,50 @@ let state: NightState;
 let rng: Rng;
 let briefing: Briefing;
 let selected: Set<string>;
+/** Блокировка кликов на время анимации выбора. */
+let animating = false;
+
+/**
+ * Анимация выбора: заполнение строки слева направо (0.5с), затем — если есть
+ * вердикт — рассеивающееся слово УСПЕХ/ПРОВАЛ у конца полоски.
+ */
+function animateChoice(
+  btn: HTMLElement,
+  verdict: 'success' | 'fail' | null,
+  done: () => void,
+): void {
+  btn.closest('.options')?.classList.add('options-locked');
+  btn.classList.add('chosen');
+  if (verdict) {
+    const word = el(
+      'span',
+      `verdict ${verdict === 'success' ? 'v-ok' : 'v-fail'}`,
+      verdict === 'success' ? 'УСПЕХ' : 'ПРОВАЛ',
+    );
+    btn.append(word);
+  }
+  window.setTimeout(done, verdict ? 1050 : 520);
+}
+
+/** Быстрый «набор» текста — управляет вниманием; клик — показать сразу. */
+function typeText(node: HTMLElement, text: string): void {
+  let i = 0;
+  let timer = 0;
+  const step = () => {
+    i += 3;
+    node.textContent = text.slice(0, i);
+    if (i < text.length) timer = window.setTimeout(step, 16);
+  };
+  timer = window.setTimeout(step, 16);
+  node.addEventListener(
+    'click',
+    () => {
+      window.clearTimeout(timer);
+      node.textContent = text;
+    },
+    { once: true },
+  );
+}
 
 export function boot(el: HTMLElement): void {
   root = el;
@@ -106,7 +150,8 @@ function renderBriefing(): void {
       'intro-text',
       'Смена — 12 часов, а заявок больше, чем часов аналитика. ' +
         'Часть сводок — реальные угрозы, часть — жёлтая пресса. ' +
-        'Размеченное дело пойдёт с меньшим риском; неразмеченная угроза к утру вырастет.',
+        'Размеченное дело пойдёт с меньшим риском; неразмеченная угроза к утру вырастет. ' +
+        'Час аналитика уходит на дело сразу — выбирайте по одному, отменить нельзя.',
     ),
   );
 
@@ -115,25 +160,27 @@ function renderBriefing(): void {
 
   const list = el('div', 'lead-list');
   for (const lead of briefing.leads) {
-    const cardCls = () => `lead ${selected.has(lead.id) ? 'sel' : ''}`;
-    const card = el('button', cardCls());
+    const card = el('button', 'lead');
     card.innerHTML =
+      `<span class="fill"></span>` +
       `<div class="lead-head"><span class="lead-title">${lead.title}</span>` +
-      `<span class="lead-mark">${selected.has(lead.id) ? '★ в работе' : '＋ разметить'}</span></div>` +
+      `<span class="lead-mark">＋ разметить</span></div>` +
       `<div class="lead-blurb">${lead.blurb}</div>` +
       `<div class="lead-signal">${lead.signal}</div>`;
+    // Выбор по одной и окончательно: час аналитика уходит на дело сразу.
     card.addEventListener('click', () => {
-      if (selected.has(lead.id)) {
-        selected.delete(lead.id);
-      } else if (selected.size < briefing.points) {
+      if (animating || selected.has(lead.id) || selected.size >= briefing.points) return;
+      animating = true;
+      card.classList.add('chosen');
+      window.setTimeout(() => {
+        animating = false;
         selected.add(lead.id);
-      }
-      // перерисовать метку и метр без пересборки экрана
-      card.className = cardCls();
-      const mk = card.querySelector('.lead-mark') as HTMLElement;
-      mk.textContent = selected.has(lead.id) ? '★ в работе' : '＋ разметить';
-      updateMeter(meter);
-      updateLeadDisabled(list);
+        card.classList.remove('chosen');
+        card.classList.add('sel');
+        (card.querySelector('.lead-mark') as HTMLElement).textContent = '★ в работе';
+        updateMeter(meter);
+        updateLeadDisabled(list);
+      }, 520);
     });
     list.append(card);
   }
@@ -276,7 +323,8 @@ function renderIncident(): void {
     const btn = el(
       'button',
       `option kind-${opt.kind}`,
-      `<span class="option-kind">${KIND_LABEL[opt.kind]}</span>` +
+      `<span class="fill"></span>` +
+        `<span class="option-kind">${KIND_LABEL[opt.kind]}</span>` +
         `<span class="option-label">${opt.label}</span>` +
         `<span class="option-costs">${optionCosts(opt, inc)}</span>`,
     ) as HTMLButtonElement;
@@ -284,7 +332,7 @@ function renderIncident(): void {
       btn.disabled = true;
       btn.title = 'Не хватает Силы';
     }
-    btn.addEventListener('click', () => choose(opt));
+    btn.addEventListener('click', () => choose(opt, btn));
     opts.append(btn);
   }
   card.append(opts);
@@ -292,25 +340,36 @@ function renderIncident(): void {
   root.append(scr);
 }
 
-function choose(opt: DecisionOption): void {
+function choose(opt: DecisionOption, btn: HTMLElement): void {
+  if (animating) return;
+  animating = true;
   if (opt.combat) {
     payOptionCost(state, opt);
-    renderCombat(
-      root,
-      (result) => {
-        const fx = resolveCombatOption(state, opt, result === 'win');
-        renderOutcome(fx.text, result !== 'win');
-      },
-      { enemy: opt.combat },
-    );
+    // Единый резерв: бой получает текущую Силу смены и возвращает остаток.
+    const powerIn = state.power;
+    animateChoice(btn, null, () => {
+      animating = false;
+      renderCombat(
+        root,
+        (result, powerLeft) => {
+          state.power = Math.max(0, Math.min(powerLeft, START_POWER));
+          const fx = resolveCombatOption(state, opt, result === 'win');
+          renderOutcome(fx.text, result !== 'win');
+        },
+        { enemy: opt.combat, playerPower: powerIn },
+      );
+    });
     return;
   }
   const outcome = applyDecision(state, rng, opt);
-  if (outcome.witnessPrompt) {
-    renderWitnessPrompt(outcome.failed);
-  } else {
-    renderOutcome(outcome.effects.text, outcome.failed);
-  }
+  animateChoice(btn, outcome.failed ? 'fail' : 'success', () => {
+    animating = false;
+    if (outcome.witnessPrompt) {
+      renderWitnessPrompt(outcome.failed);
+    } else {
+      renderOutcome(outcome.effects.text, outcome.failed);
+    }
+  });
 }
 
 function renderWitnessPrompt(failed: boolean): void {
@@ -332,25 +391,37 @@ function renderWitnessPrompt(failed: boolean): void {
   const erase = el(
     'button',
     'option kind-force',
-    `<span class="option-kind">СИЛА</span>` +
+    `<span class="fill"></span>` +
+      `<span class="option-kind">СИЛА</span>` +
       `<span class="option-label">Стереть память о часе</span>` +
       `<span class="option-costs">15 мин · лицензия 6-го ур. Тьме</span>`,
   );
   erase.addEventListener('click', () => {
+    if (animating) return;
+    animating = true;
     resolveWitness(state, 'erase');
-    renderOutcome(state.log[state.log.length - 1], failed);
+    animateChoice(erase, 'success', () => {
+      animating = false;
+      renderOutcome(state.log[state.log.length - 1], failed);
+    });
   });
 
   const leave = el(
     'button',
     'option kind-ignore',
-    `<span class="option-kind">МИМО</span>` +
+    `<span class="fill"></span>` +
+      `<span class="option-kind">МИМО</span>` +
       `<span class="option-label">Оставить как есть</span>` +
       `<span class="option-costs">бесплатно · слухи по району</span>`,
   );
   leave.addEventListener('click', () => {
+    if (animating) return;
+    animating = true;
     resolveWitness(state, 'leave');
-    renderOutcome(state.log[state.log.length - 1], failed);
+    animateChoice(leave, null, () => {
+      animating = false;
+      renderOutcome(state.log[state.log.length - 1], failed);
+    });
   });
 
   opts.append(erase, leave);
@@ -364,10 +435,9 @@ function renderOutcome(text: string, failed: boolean): void {
   const scr = el('div', 'screen');
   scr.append(statsBar());
   const card = el('div', `card outcome ${failed ? 'outcome-fail' : ''}`);
-  card.append(
-    el('div', 'card-meta', failed ? 'Пошло не по плану' : 'Исход'),
-    el('p', 'card-text', text),
-  );
+  const body = el('p', 'card-text typed');
+  card.append(el('div', 'card-meta', failed ? 'Пошло не по плану' : 'Исход'), body);
+  typeText(body, text);
   const next = el('button', 'btn primary', 'Дальше');
   next.addEventListener('click', () => {
     advance(state);

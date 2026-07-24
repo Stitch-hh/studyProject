@@ -225,6 +225,61 @@ body {
 
 .option:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* ---- Анимация выбора: заполнение слева направо + вердикт ---- */
+.option { position: relative; overflow: hidden; }
+
+.option .fill,
+.lead .fill {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(200, 164, 74, 0.26), rgba(200, 164, 74, 0.1));
+  transform: scaleX(0);
+  transform-origin: left center;
+  z-index: 0;
+}
+
+.option.chosen .fill,
+.lead.chosen .fill {
+  transform: scaleX(1);
+  transition: transform 0.5s ease-out;
+}
+
+.option.chosen,
+.lead.chosen { border-color: var(--accent); }
+
+.options-locked .option { pointer-events: none; }
+
+.option > span:not(.fill):not(.verdict) { position: relative; z-index: 1; }
+
+.verdict {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 0.18em;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.v-ok { color: #7fae8f; }
+.v-fail { color: #d98a7a; }
+
+.option.chosen .verdict {
+  animation: verdict-dissolve 0.55s ease-out 0.45s forwards;
+}
+
+@keyframes verdict-dissolve {
+  0% { opacity: 0; filter: blur(5px); }
+  35% { opacity: 1; filter: blur(0); }
+  100% { opacity: 0; filter: blur(7px); letter-spacing: 0.5em; }
+}
+
+.card-text.typed { min-height: 3.2em; cursor: pointer; }
+
 .option-kind {
   grid-row: 1 / 3;
   align-self: center;
@@ -321,7 +376,11 @@ body {
   color: var(--text);
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s, opacity 0.2s;
+  position: relative;
+  overflow: hidden;
 }
+
+.lead > div { position: relative; z-index: 1; }
 
 .lead:hover { border-color: var(--accent); background: #1b2130; }
 

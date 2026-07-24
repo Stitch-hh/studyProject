@@ -36,7 +36,7 @@ interface FloatNum {
 let state: CombatState;
 let rng: Rng;
 let root: HTMLElement;
-let onExit: (outcome: 'win' | 'lose') => void;
+let onExit: (outcome: 'win' | 'lose', powerLeft: number) => void;
 
 let canvas: HTMLCanvasElement;
 let ctx: CanvasRenderingContext2D;
@@ -52,7 +52,7 @@ let invest = 0;
 
 export function renderCombat(
   mount: HTMLElement,
-  exit: (outcome: 'win' | 'lose') => void,
+  exit: (outcome: 'win' | 'lose', powerLeft: number) => void,
   opts: CombatOpts = {},
 ): void {
   root = mount;
@@ -163,7 +163,7 @@ function renderActions(): void {
     back.addEventListener('click', () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', sizeCanvas);
-      onExit(state.outcome === 'win' ? 'win' : 'lose');
+      onExit(state.outcome === 'win' ? 'win' : 'lose', Math.round(state.player.power));
     });
     box.append(res, back);
     return;
